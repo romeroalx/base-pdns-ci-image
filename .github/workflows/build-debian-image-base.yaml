@@ -7,7 +7,7 @@ on:
     - cron: '0 23 * * *'
 
 env:
-  IMAGE_ID: ghcr.io/PowerDNS/base-pdns-ci-image/debian-11-pdns-base
+  IMAGE_ID: ghcr.io/powerdns/base-pdns-ci-image/debian-11-pdns-base
   IMAGE_TAG: "master"
 
 jobs:
