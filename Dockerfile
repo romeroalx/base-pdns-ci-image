@@ -1,8 +1,8 @@
 FROM debian:11
 
 ARG REPO_HOME=/home/runner
-ARG REPO_BRANCH=actions-debian-container
-ARG REPO_URL=https://github.com/romeroalx/pdns.git
+ARG REPO_BRANCH=master
+ARG REPO_URL=https://github.com/PowerDNS/pdns.git
 
 ENV CLANG_VERSION='13'
 
