@@ -7,8 +7,8 @@ on:
     - cron: '0 23 * * *'
 
 env:
-  IMAGE_ID: ghcr.io/powerdns/base-pdns-ci-image/debian-11-pdns-base
-  IMAGE_TAG: "master"
+  IMAGE_ID: ghcr.io/romeroalx/base-pdns-ci-image/debian-11-pdns-base
+  IMAGE_TAG: "test"
 
 jobs:
   build-and-push-debian-image:
@@ -33,8 +33,8 @@ jobs:
       - run: cat /etc/group
       - run: ls -n /var/run/docker.sock
 
-#       - name: Build image
-#         run: docker build . --file Dockerfile --tag $IMAGE_ID:$IMAGE_TAG
+      - name: Build image
+        run: docker build . --file Dockerfile --tag $IMAGE_ID:$IMAGE_TAG --build-arg DOCKER_GID=$(stat -c %g /var/run/docker.sock)
 # 
 #       - name: Login to GitHub Container Registry
 #         uses: docker/login-action@v2

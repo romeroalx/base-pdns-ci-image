@@ -2,7 +2,7 @@ FROM debian:11
 
 ARG REPO_HOME=/home/runner
 ARG REPO_BRANCH=master
-ARG REPO_URL=https://github.com/PowerDNS/pdns.git
+ARG REPO_URL=https://github.com/romeroalx/pdns.git
 
 ENV CLANG_VERSION='13'
 
@@ -19,7 +19,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Run as user "runner", uid 1001, gid 122. Make this user a passwordless sudoer
-RUN groupadd -g 122 docker
+RUN echo ${DOCKER_GID}
+RUN groupadd -g ${DOCKER_GID} docker
 RUN useradd -u 1001 -ms /bin/bash -g docker runner
 RUN echo "runner ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 USER runner
