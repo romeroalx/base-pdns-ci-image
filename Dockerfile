@@ -21,8 +21,8 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Run as user "runner", uid 1001, gid 122. Make this user a passwordless sudoer
 RUN echo ${DOCKER_GID}
-RUN groupadd -g ${DOCKER_GID} docker
-RUN useradd -u 1001 -ms /bin/bash -g docker runner
+RUN groupadd runner
+RUN useradd -u 1001 -ms /bin/bash -g runner runner
 RUN echo "runner ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 USER runner
 
