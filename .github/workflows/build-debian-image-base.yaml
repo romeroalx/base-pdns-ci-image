@@ -18,17 +18,20 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v3
+      - run: id
+      - run: cat /etc/group
+      - run: ls -n /var/run/docker.sock
 
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_ID:$IMAGE_TAG
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push into Github Container Registry
-        run: |
-          docker push $IMAGE_ID:$IMAGE_TAG
+#       - name: Build image
+#         run: docker build . --file Dockerfile --tag $IMAGE_ID:$IMAGE_TAG
+# 
+#       - name: Login to GitHub Container Registry
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+# 
+#       - name: Push into Github Container Registry
+#         run: |
+#           docker push $IMAGE_ID:$IMAGE_TAG
