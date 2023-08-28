@@ -3,6 +3,7 @@ FROM debian:11
 ARG REPO_HOME=/home/runner
 ARG REPO_BRANCH=master
 ARG REPO_URL=https://github.com/romeroalx/pdns.git
+ARG DOCKER_GID=122
 
 ENV CLANG_VERSION='13'
 
