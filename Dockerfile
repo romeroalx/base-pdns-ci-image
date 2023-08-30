@@ -15,7 +15,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     sudo git curl gnupg software-properties-common wget \
     ca-certificates apt-utils build-essential vim \
     iproute2 net-tools iputils-* ifupdown cmake acl \
-    npm time mariadb-client postgresql-client jq python
+    npm time mariadb-client postgresql-client jq python docker.io
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
