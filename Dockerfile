@@ -10,17 +10,19 @@ ENV CLANG_VERSION='13'
 # Reusable layer for base update
 RUN apt-get update && apt-get -y dist-upgrade && apt-get clean
 
+# Force the ID for docker group
+RUN groupadd -g ${DOCKER_GID} docker
+
 # Install basic SW and debugging tools
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     sudo git curl gnupg software-properties-common wget \
     ca-certificates apt-utils build-essential vim \
     iproute2 net-tools iputils-* ifupdown cmake acl \
-    npm time mariadb-client postgresql-client jq python
+    npm time mariadb-client postgresql-client jq python docker.io
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Run as user "runner", uid: 1001, gid: group ID for docker on the runner VM . Make this user a passwordless sudoer
-RUN groupadd -g ${DOCKER_GID} docker
 RUN useradd -u 1001 -ms /bin/bash -g docker runner
 RUN echo "runner ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 USER runner
