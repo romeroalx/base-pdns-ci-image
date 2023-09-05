@@ -3,17 +3,17 @@ name: Build Docker Debian 11 image
 on:
   workflow_dispatch:
   push:
-    branches: [image-debian-11]
+    branches: [dev-official-docker]
   schedule:
     - cron: '0 23 * * *'
 
 env:
-  IMAGE_ID: ghcr.io/powerdns/base-pdns-ci-image/debian-11-pdns-base
+  IMAGE_ID: ghcr.io/romeroalx/base-pdns-ci-image/debian-11-pdns-base
   IMAGE_TAG: "master"
 
 jobs:
   build-and-push-debian-image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
