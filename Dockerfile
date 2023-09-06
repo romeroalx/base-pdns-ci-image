@@ -31,7 +31,7 @@ RUN echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/d
         tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 RUN apt-get update
-RUN apt-get install docker-ce-cli docker-compose-plugin
+RUN apt-get install -y docker-ce-cli docker-compose-plugin
 
 # Run as user "runner", uid: 1001, gid: group ID for docker on the runner VM . Make this user a passwordless sudoer
 RUN useradd -u 1001 -ms /bin/bash -g docker runner
