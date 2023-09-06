@@ -3,7 +3,7 @@ name: Build Docker Debian 11 image
 on:
   workflow_dispatch:
   push:
-    branches: [image-debian-11]
+  #   branches: [image-debian-11]
   schedule:
     - cron: '0 23 * * *'
 
