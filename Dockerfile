@@ -6,6 +6,7 @@ ARG REPO_URL=https://github.com/PowerDNS/pdns.git
 ARG DOCKER_GID=1000
 
 ENV CLANG_VERSION='13'
+ENV DECAF_SUPPORT=yes
 
 # Reusable layer for base update
 RUN apt-get update && apt-get -y dist-upgrade && apt-get clean
