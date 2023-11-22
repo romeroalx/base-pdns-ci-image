@@ -25,10 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - run: |
+          echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image-id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
+
       - name: Build image
         run: |
           docker build . --file Dockerfile \
-            --tag ghcr.io/${{ github.repository }}/${{ matrix.image-id }}:${{ env.IMAGE_TAG }} \
+            --tag ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }} \
             --build-arg DEBIAN_IMAGE_TAG=${{ matrix.debian-release-name }}
 
       - name: Login to GitHub Container Registry
@@ -40,4 +43,4 @@ jobs:
 
       - name: Push into Github Container Registry
         run: |
-          docker push ghcr.io/${{ github.repository }}/${{ matrix.image-id }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }}
