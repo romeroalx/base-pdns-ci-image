@@ -1,4 +1,5 @@
-FROM debian:11
+ARG DEBIAN_IMAGE_TAG
+FROM debian:${DEBIAN_IMAGE_TAG}
 
 ARG REPO_HOME=/home/runner
 ARG REPO_BRANCH=master
@@ -19,8 +20,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     sudo git curl gnupg software-properties-common wget \
     ca-certificates apt-utils build-essential vim \
     iproute2 net-tools iputils-* ifupdown cmake acl \
-    npm time mariadb-client postgresql-client jq python
+    npm time mariadb-client postgresql-client jq python3
 
+# Required for auth-backend gsqlite3 tests
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # Install Docker client from the official Docker repository
