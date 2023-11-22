@@ -3,6 +3,7 @@ name: Build Debian images for PDNS CI
 on:
   workflow_dispatch:
   push:
+  pull_request:
   schedule:
     - cron: '0 23 * * *'
 
@@ -35,6 +36,7 @@ jobs:
             --build-arg DEBIAN_IMAGE_TAG=${{ matrix.debian-release-name }}
 
       - name: Login to GitHub Container Registry
+        if: ${{ github.event_name != 'pull_request' }}
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -42,5 +44,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push into Github Container Registry
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           docker push ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }}
