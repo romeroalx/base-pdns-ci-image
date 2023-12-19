@@ -47,3 +47,28 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           docker push ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }}
+
+  purge-old-images:
+    name: Purge old PDNS CI images
+    needs: build-and-push-debian-images
+    runs-on: ubuntu-22.04
+    if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        image-id: 
+        - debian-11-pdns-base
+        - debian-12-pdns-base
+    steps:
+      - name: Get repository name
+        run: |
+          echo "${{ github.repository }}" | awk -F'/' '{print "repo-name="$2}' >> "$GITHUB_ENV"
+
+      - name: Purge old images keeping the 5 more recent ones
+        uses: actions/delete-package-versions@v4
+        with: 
+          package-name: ${{ env.repo-name }}/${{ matrix.image-id }}
+          package-type: container
+          min-versions-to-keep: 5
