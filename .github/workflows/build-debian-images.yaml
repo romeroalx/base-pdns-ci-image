@@ -19,6 +19,7 @@ jobs:
           debian-release-name: bullseye-slim
         - image-id: debian-12-pdns-base
           debian-release-name: bookworm-slim
+      fail-fast: false
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -61,6 +62,7 @@ jobs:
         image-id: 
         - debian-11-pdns-base
         - debian-12-pdns-base
+      fail-fast: false
     steps:
       - name: Get repository name
         run: |
