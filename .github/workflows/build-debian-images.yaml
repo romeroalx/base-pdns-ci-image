@@ -7,18 +7,19 @@ on:
   schedule:
     - cron: '0 23 * * *'
 
-env:
-  IMAGE_TAG: master
-
 jobs:
   build-and-push-debian-images:
     strategy:
       matrix:
-        include:
-        - image-id: debian-11-pdns-base
-          debian-release-name: bullseye-slim
-        - image-id: debian-12-pdns-base
-          debian-release-name: bookworm-slim
+        branch-name:
+          - master
+          - rel/auth-4.9.x
+          - rel/dnsdist-1.9.x
+        image:
+          - id: debian-11-pdns-base
+            debian-release: bullseye-slim
+          - id: debian-12-pdns-base
+            debian-release: bookworm-slim
       fail-fast: false
     runs-on: ubuntu-22.04
     permissions:
@@ -28,13 +29,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - run: |
-          echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image-id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
+          echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image.id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
+          echo "image-tag=$(echo ${{ matrix.branch-name }} | cut -d '/' -f 2)" >> "$GITHUB_ENV"
 
       - name: Build image
         run: |
           docker build . --file Dockerfile \
-            --tag ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }} \
-            --build-arg DEBIAN_IMAGE_TAG=${{ matrix.debian-release-name }}
+            --tag ${{ env.image-id-lowercase }}:${{ env.image-tag }} \
+            --build-arg DEBIAN_IMAGE_TAG=${{ matrix.image.debian-release }} \
+            --build-arg REPO_BRANCH=${{ matrix.branch-name }}
 
       - name: Login to GitHub Container Registry
         if: ${{ github.event_name != 'pull_request' }}
@@ -47,7 +50,7 @@ jobs:
       - name: Push into Github Container Registry
         if: ${{ github.event_name != 'pull_request' }}
         run: |
-          docker push ${{ env.image-id-lowercase }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.image-id-lowercase }}:${{ env.image-tag }}
 
   purge-old-images:
     name: Purge old PDNS CI images
