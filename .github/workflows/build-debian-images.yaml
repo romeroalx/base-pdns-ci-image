@@ -17,9 +17,11 @@ jobs:
           - rel/dnsdist-1.9.x
         image:
           - id: debian-11-pdns-base
-            debian-release: bullseye-slim
+            debian-image-name: python
+            debian-image-tag: 3.11-bullseye
           - id: debian-12-pdns-base
-            debian-release: bookworm-slim
+            debian-image-name: debian
+            debian-image-tag: bookworm-slim
       fail-fast: false
     runs-on: ubuntu-22.04
     permissions:
@@ -36,7 +38,8 @@ jobs:
         run: |
           docker build . --file Dockerfile \
             --tag ${{ env.image-id-lowercase }}:${{ env.image-tag }} \
-            --build-arg DEBIAN_IMAGE_TAG=${{ matrix.image.debian-release }} \
+            --build-arg DEBIAN_IMAGE_NAME=${{ matrix.image.debian-image-name }} \
+            --build-arg DEBIAN_IMAGE_TAG=${{ matrix.image.debian-image-tag }} \
             --build-arg REPO_BRANCH=${{ matrix.branch-name }}
 
       - name: Login to GitHub Container Registry
