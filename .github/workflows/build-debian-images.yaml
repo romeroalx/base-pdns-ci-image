@@ -18,7 +18,7 @@ jobs:
         image:
           - id: debian-11-pdns-base
             debian-image-name: python
-            debian-image-tag: 3.11-bullseye
+            debian-image-tag: 3.11-slim-bullseye
           - id: debian-12-pdns-base
             debian-image-name: debian
             debian-image-tag: bookworm-slim
