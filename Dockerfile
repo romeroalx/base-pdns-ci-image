@@ -2,7 +2,8 @@ ARG DEBIAN_IMAGE_NAME
 ARG DEBIAN_IMAGE_TAG
 FROM ${DEBIAN_IMAGE_NAME}:${DEBIAN_IMAGE_TAG}
 
-ARG REPO_HOME=/home/runner
+ARG USER_HOME=/home/runner
+ARG REPO_HOME=/home/runner/pdns
 ARG REPO_BRANCH=master
 ARG REPO_URL=https://github.com/PowerDNS/pdns.git
 ARG DOCKER_GID=1000
@@ -43,12 +44,12 @@ RUN echo "runner ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 USER runner
 
 # Clone repo an execute basic configuration. Do not delete folder
-RUN mkdir -p ${REPO_HOME}
-WORKDIR ${REPO_HOME}
+RUN mkdir -p ${USER_HOME}
+WORKDIR ${USER_HOME}
 RUN git clone ${REPO_URL}
 
 # Install required packages
-WORKDIR ${REPO_HOME}/pdns
+WORKDIR ${REPO_HOME}
 RUN git checkout origin/${REPO_BRANCH}
 RUN build-scripts/gh-actions-setup-inv
 RUN inv apt-fresh
@@ -63,7 +64,7 @@ RUN sudo mkdir -p /usr/local/lib/node_modules
 RUN sudo chmod 777 /opt /usr/local/bin /usr/share /usr/local/lib/node_modules
 RUN sudo chmod 777 -R /opt/pdns-auth
 
-WORKDIR ${REPO_HOME}
+WORKDIR ${USER_HOME}
 
 # Clean-up folder
 RUN rm -rf pdns
