@@ -62,6 +62,7 @@ RUN inv install-dnsdist-build-deps $([ "$(. /etc/os-release && echo $VERSION_COD
 # Copy permissions for /opt and node_modules like Github runner VMs
 RUN sudo mkdir -p /usr/local/lib/node_modules
 RUN sudo chmod 777 /opt /usr/local/bin /usr/share /usr/local/lib/node_modules
+RUN sudo chmod 777 -R /opt/pdns-auth || true
 
 WORKDIR ${USER_HOME}
 
