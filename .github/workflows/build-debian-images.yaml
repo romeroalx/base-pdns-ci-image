@@ -13,15 +13,20 @@ jobs:
       matrix:
         branch-name:
           - master
-          - rel/auth-4.9.x
-          - rel/dnsdist-1.9.x
+          # - rel/auth-4.9.x
+          # - rel/dnsdist-1.9.x
         image:
-          - id: debian-11-pdns-base
+          - id: debian-11-pdns-base-py13
             debian-image-name: python
-            debian-image-tag: 3.11-slim-bullseye
-          - id: debian-12-pdns-base
-            debian-image-name: debian
-            debian-image-tag: bookworm-slim
+            # debian-image-tag: 3.11-slim-bullseye
+            debian-image-tag: 3.13-slim-bullseye
+          - id: debian-12-pdns-base-py13
+            debian-image-name: python
+            # debian-image-tag: 3.11-slim-bullseye
+            debian-image-tag: 3.13-slim-bookworm
+          #- id: debian-12-pdns-base
+          #  debian-image-name: debian
+          #  debian-image-tag: bookworm-slim
       fail-fast: false
     runs-on: ubuntu-22.04
     permissions:
