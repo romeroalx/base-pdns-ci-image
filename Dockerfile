@@ -5,7 +5,7 @@ FROM ${DEBIAN_IMAGE_NAME}:${DEBIAN_IMAGE_TAG}
 ARG USER_HOME=/home/runner
 ARG REPO_HOME=/home/runner/pdns
 ARG REPO_BRANCH=master
-ARG REPO_URL=https://github.com/PowerDNS/pdns.git
+ARG REPO_URL=https://github.com/romeroalx/pdns.git
 ARG DOCKER_GID=1000
 
 ENV CLANG_VERSION='13'

@@ -12,13 +12,13 @@ jobs:
     strategy:
       matrix:
         branch-name:
-          - master
-          - rel/auth-4.9.x
-          - rel/dnsdist-1.9.x
+          - enable-meson-auth-deb11
+          # - rel/auth-4.9.x
+          # - rel/dnsdist-1.9.x
         image:
           - id: debian-11-pdns-base
-            debian-image-name: python
-            debian-image-tag: 3.11-slim-bullseye
+            debian-image-name: debian
+            debian-image-tag: bullseye-slim
           - id: debian-12-pdns-base
             debian-image-name: debian
             debian-image-tag: bookworm-slim
