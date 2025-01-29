@@ -2,19 +2,53 @@ name: Build Debian images for PDNS CI
 
 on:
   workflow_dispatch:
+    inputs:
+      pdns-repo-url:
+        description: HTTPS URL of the PDNS repository to clone from
+        type: string
+        default: https://github.com/PowerDNS/pdns.git
+        required: false
+      pdns-branch-name:
+        description: Branch to be used when cloning the PDNS repository
+        type: string
+        default: master
+        required: false
+      image-tag:
+        description: Tag to use for the image
+        type: string
+        default: master
+        required: false
+      dockerfile:
+        description: Dockerfile to use to build images
+        type: string
+        default: Dockerfile-pipenv
+        required: false
   push:
   pull_request:
   schedule:
     - cron: '0 23 * * *'
 
+env:
+  DEFAULT_PDNS_REPO_URL: https://github.com/PowerDNS/pdns.git
+
 jobs:
+  get-build-data:
+    name: generate docker runner image name
+    runs-on: ubuntu-22.04
+    outputs:
+      pdns-branch-name: ${{ steps.get-branch-name.outputs.pdns-branch-name }}
+    env:
+      DEFAULT_PDNS_BRANCHES: '\"master\",\"rel/auth-4.9.x\",\"rel/dnsdist-1.9.x\"'
+    steps:
+      - id: get-branch-name
+        run: |
+          echo "pdns-branch-name=[${{ inputs.pdns-branch-name && format('\"{0}\"', inputs.pdns-branch-name) || env.DEFAULT_PDNS_BRANCHES }}]" >> "$GITHUB_OUTPUT"
+
   build-and-push-debian-images:
+    needs: get-build-data
     strategy:
       matrix:
-        branch-name:
-          - master
-          - rel/auth-4.9.x
-          - rel/dnsdist-1.9.x
+        branch-name: ${{ fromJSON(needs.get-build-data.outputs.pdns-branch-name) }}
         image:
           - id: debian-11-pdns-base
             debian-image-name: python
@@ -33,13 +67,15 @@ jobs:
       - run: |
           echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image.id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
           echo "image-tag=$(echo ${{ matrix.branch-name }} | cut -d '/' -f 2)" >> "$GITHUB_ENV"
+          echo "dockerfile=$(echo Dockerfile${{ matrix.branch-name == 'master' && '-pipenv' || '' }} | cut -d '/' -f 2)" >> "$GITHUB_ENV"
 
       - name: Build image
         run: |
-          docker build . --file Dockerfile \
-            --tag ${{ env.image-id-lowercase }}:${{ env.image-tag }} \
+          docker build . --file ${{ inputs.dockerfile || env.dockerfile }} \
+            --tag ${{ env.image-id-lowercase }}:${{ inputs.image-tag || env.image-tag }} \
             --build-arg DEBIAN_IMAGE_NAME=${{ matrix.image.debian-image-name }} \
             --build-arg DEBIAN_IMAGE_TAG=${{ matrix.image.debian-image-tag }} \
+            --build-arg REPO_URL=${{ inputs.pdns-repo-url || env.DEFAULT_PDNS_REPO_URL }} \
             --build-arg REPO_BRANCH=${{ matrix.branch-name }}
 
       - name: Login to GitHub Container Registry
@@ -53,7 +89,7 @@ jobs:
       - name: Push into Github Container Registry
         if: ${{ github.event_name != 'pull_request' }}
         run: |
-          docker push ${{ env.image-id-lowercase }}:${{ env.image-tag }}
+          docker push ${{ env.image-id-lowercase }}:${{ inputs.image-tag || env.image-tag }}
 
   purge-old-images:
     name: Purge old PDNS CI images
