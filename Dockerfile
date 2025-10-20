@@ -22,7 +22,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     sudo git curl gnupg software-properties-common wget \
     ca-certificates apt-utils build-essential vim \
     iproute2 net-tools iputils-* ifupdown cmake acl \
-    npm time mariadb-client postgresql-client jq python3
+    time mariadb-client postgresql-client jq python3 python3-requests python3-venv
 
 # Required for auth-backend gsqlite3 tests
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -52,16 +52,13 @@ RUN git clone ${REPO_URL}
 WORKDIR ${REPO_HOME}
 RUN git checkout origin/${REPO_BRANCH}
 RUN build-scripts/gh-actions-setup-inv
-RUN inv apt-fresh
 RUN inv install-clang
 RUN inv install-clang-tidy-tools
-RUN inv install-auth-build-deps
-RUN inv install-rec-build-deps
-RUN inv install-dnsdist-build-deps $([ "$(. /etc/os-release && echo $VERSION_CODENAME)" = "bullseye" ] && echo "--skipXDP=True")
 
 # Copy permissions for /opt and node_modules like Github runner VMs
-RUN sudo mkdir -p /usr/local/lib/node_modules
-RUN sudo chmod 777 /opt /usr/local/bin /usr/share /usr/local/lib/node_modules
+# RUN sudo mkdir -p /usr/local/lib/node_modules
+# RUN sudo chmod 777 /opt /usr/local/bin /usr/share /usr/local/lib/node_modules
+RUN sudo chmod 777 /opt /usr/local/bin /usr/share
 RUN sudo chmod 777 -R /opt/pdns-auth || true
 
 WORKDIR ${USER_HOME}
