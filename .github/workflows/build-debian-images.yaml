@@ -14,7 +14,6 @@ jobs:
         branch-name:
           - master
           - rel/auth-4.9.x
-          - rel/dnsdist-1.9.x
         image:
           - id: debian-11-pdns-base
             debian-image-name: python
