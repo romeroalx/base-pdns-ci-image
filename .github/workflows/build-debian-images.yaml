@@ -11,6 +11,9 @@ jobs:
   build-and-push-debian-images:
     strategy:
       matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
         branch-name:
           - master
           - rel/auth-4.9.x
@@ -21,26 +24,27 @@ jobs:
           - id: debian-12-pdns-base
             debian-image-name: debian
             debian-image-tag: bookworm-slim
+        exclude:
+          - branch-name: rel/auth-4.9.x
+            image: {id: debian-11-pdns-base, debian-image-name: python, debian-image-tag: 3.11-slim-bullseye}
+          - branch-name: rel/auth-4.9.x
+            runner: ubuntu-24.04-arm
       fail-fast: false
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-
       - run: |
           echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image.id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
           echo "image-tag=$(echo ${{ matrix.branch-name }} | cut -d '/' -f 2)" >> "$GITHUB_ENV"
-
-      - name: Build image
-        run: |
-          docker build . --file Dockerfile \
-            --tag ${{ env.image-id-lowercase }}:${{ env.image-tag }} \
-            --build-arg DEBIAN_IMAGE_NAME=${{ matrix.image.debian-image-name }} \
-            --build-arg DEBIAN_IMAGE_TAG=${{ matrix.image.debian-image-tag }} \
-            --build-arg REPO_BRANCH=${{ matrix.branch-name }}
-
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Docker Buildx for multi-platform builds
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Login to GitHub Container Registry
         if: ${{ github.event_name != 'pull_request' }}
         uses: docker/login-action@v3
@@ -48,23 +52,97 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push into Github Container Registry
-        if: ${{ github.event_name != 'pull_request' }}
+      - name: Build and load images
+        id: build-image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.branch.platforms }}
+          push: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
+          tags: ${{ env.image-id-lowercase }}
+          build-args: |
+            DEBIAN_IMAGE_NAME=${{ matrix.image.debian-image-name }}
+            DEBIAN_IMAGE_TAG=${{ matrix.image.debian-image-tag }}
+            REPO_BRANCH=${{ matrix.branch-name }}
+          outputs: type=image,push-by-digest=true,name-canonical=true
+      - name: Export output digest
+        env:
+          DIGEST: ${{ steps.build-image.outputs.digest }}
         run: |
-          docker push ${{ env.image-id-lowercase }}:${{ env.image-tag }}
+          mkdir -p $RUNNER_TEMP/digests
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+          # generate suffix for digest file
+          echo "ARCH=$(arch)" >> $GITHUB_ENV
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.image.id }}-${{ env.image-tag }}-${{ env.ARCH }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-tags:
+    name: Generate and publish tag for multi-platform image
+    strategy:
+      matrix:
+        branch-name:
+          - master
+          - rel/auth-4.9.x
+        image-id:
+          - debian-11-pdns-base
+          - debian-12-pdns-base
+        exclude:
+          - branch-name: rel/auth-4.9.x
+            image-id: debian-11-pdns-base
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: build-and-push-debian-images
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - run: |
+          echo "image-id-lowercase=ghcr.io/${{ github.repository }}/${{ matrix.image-id }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
+          echo "image-tag=$(echo ${{ matrix.branch-name }} | cut -d '/' -f 2)" >> "$GITHUB_ENV"
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.image-id }}-${{ env.image-tag }}-*
+          merge-multiple: true
+      - name: Login to GitHub Container Registry
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.image-id-lowercase }}
+          tags: ${{ env.image-tag }}
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf ${{ env.image-id-lowercase }}'@sha256:%s ' *)
 
   purge-old-images:
     name: Purge old PDNS CI images
-    needs: build-and-push-debian-images
+    needs: publish-tags
     runs-on: ubuntu-22.04
-    if: ${{ github.event_name != 'pull_request' }}
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
-        image-id: 
+        image-id:
         - debian-11-pdns-base
         - debian-12-pdns-base
       fail-fast: false
@@ -76,8 +154,8 @@ jobs:
       - name: Purge old images keeping the 5 more recent ones
         # FIXME: move to tag v5 when available.
         uses: actions/delete-package-versions@v5.0.0
-        with: 
+        with:
           package-name: ${{ env.repo-name }}/${{ matrix.image-id }}
           package-type: container
-          min-versions-to-keep: 5
+          min-versions-to-keep: 20
           delete-only-untagged-versions: true
