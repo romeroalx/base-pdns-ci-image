@@ -21,12 +21,20 @@ jobs:
           - id: debian-11-pdns-base
             debian-image-name: python
             debian-image-tag: 3.11-slim-bullseye
+            clang-version: '13'
           - id: debian-12-pdns-base
             debian-image-name: debian
             debian-image-tag: bookworm-slim
+            clang-version: '13'
+          - id: debian-13-pdns-base
+            debian-image-name: python
+            debian-image-tag: 3.11-slim-trixie
+            clang-version: '19'
         exclude:
           - branch-name: rel/auth-4.9.x
             image: {id: debian-11-pdns-base, debian-image-name: python, debian-image-tag: 3.11-slim-bullseye}
+          - branch-name: rel/auth-4.9.x
+            image: {id: debian-13-pdns-base, debian-image-name: python, debian-image-tag: 3.11-slim-trixie}
           - branch-name: rel/auth-4.9.x
             runner: ubuntu-24.04-arm
       fail-fast: false
@@ -65,6 +73,7 @@ jobs:
             DEBIAN_IMAGE_NAME=${{ matrix.image.debian-image-name }}
             DEBIAN_IMAGE_TAG=${{ matrix.image.debian-image-tag }}
             REPO_BRANCH=${{ matrix.branch-name }}
+            CLANG_VERSION=${{ matrix.image.clang-version }}
           outputs: type=image,push-by-digest=true,name-canonical=true
       - name: Export output digest
         env:
@@ -92,9 +101,12 @@ jobs:
         image-id:
           - debian-11-pdns-base
           - debian-12-pdns-base
+          - debian-13-pdns-base
         exclude:
           - branch-name: rel/auth-4.9.x
             image-id: debian-11-pdns-base
+          - branch-name: rel/auth-4.9.x
+            image-id: debian-13-pdns-base
       fail-fast: false
     runs-on: ubuntu-24.04
     if: ${{ github.event_name != 'pull_request' }}
@@ -145,6 +157,7 @@ jobs:
         image-id:
         - debian-11-pdns-base
         - debian-12-pdns-base
+        - debian-13-pdns-base
       fail-fast: false
     steps:
       - name: Get repository name

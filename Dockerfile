@@ -1,5 +1,5 @@
 ARG DEBIAN_IMAGE_NAME=debian
-ARG DEBIAN_IMAGE_TAG=bookworm-slim
+ARG DEBIAN_IMAGE_TAG=trixie-slim
 FROM ${DEBIAN_IMAGE_NAME}:${DEBIAN_IMAGE_TAG}
 
 ARG USER_HOME=/home/runner
@@ -8,7 +8,8 @@ ARG REPO_BRANCH=master
 ARG REPO_URL=https://github.com/PowerDNS/pdns.git
 ARG DOCKER_GID=1000
 
-ENV CLANG_VERSION='13'
+ARG CLANG_VERSION='19'
+ENV CLANG_VERSION=${CLANG_VERSION}
 ENV DECAF_SUPPORT=yes
 
 # Reusable layer for base update
@@ -19,10 +20,14 @@ RUN groupadd -g ${DOCKER_GID} docker
 
 # Install basic SW and debugging tools
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    sudo git curl gnupg software-properties-common wget \
+    sudo git curl gnupg wget \
     ca-certificates apt-utils build-essential vim \
     iproute2 net-tools iputils-* ifupdown cmake acl \
-    time mariadb-client postgresql-client jq python3 python3-requests python3-venv
+    time mariadb-client postgresql-client jq python3 python3-requests \
+    python3-venv $([ "$(. /etc/os-release && echo $VERSION_CODENAME)" = "trixie" ] && echo "systemd-dev")
+
+# Disable ssl verification for for mariadb-client >= 11
+RUN bash -c "echo -e '[client]\ndisable-ssl-verify-server-cert' >> /etc/mysql/my.cnf"
 
 # Required for auth-backend gsqlite3 tests
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -65,5 +70,5 @@ RUN sudo chmod 777 -R /opt/pdns-auth || true
 
 WORKDIR ${USER_HOME}
 
-# Clean-up folder
+# Clean-up folders
 RUN rm -rf pdns
