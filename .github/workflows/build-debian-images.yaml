@@ -11,31 +11,55 @@ jobs:
   build-and-push-debian-images:
     strategy:
       matrix:
-        runner:
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-        branch-name:
-          - master
-          - rel/auth-4.9.x
-        image:
-          - id: debian-11-pdns-base
-            debian-image-name: python
-            debian-image-tag: 3.11-slim-bullseye
-            clang-version: '13'
-          - id: debian-12-pdns-base
-            debian-image-name: debian
-            debian-image-tag: bookworm-slim
-            clang-version: '13'
-          - id: debian-13-pdns-base
-            debian-image-name: python
-            debian-image-tag: 3.11-slim-trixie
-            clang-version: '19'
-        exclude:
-          - branch-name: rel/auth-4.9.x
-            image: {id: debian-11-pdns-base, debian-image-name: python, debian-image-tag: 3.11-slim-bullseye}
-          - branch-name: rel/auth-4.9.x
-            image: {id: debian-13-pdns-base, debian-image-name: python, debian-image-tag: 3.11-slim-trixie}
-          - branch-name: rel/auth-4.9.x
+        include:
+          - image:
+              id: debian-11-pdns-base
+              debian-image-name: python
+              debian-image-tag: 3.13-slim-bullseye
+              clang-version: '13'
+            branch-name: master
+            runner: ubuntu-24.04
+          - image:
+              id: debian-12-pdns-base
+              debian-image-name: debian
+              debian-image-tag: bookworm-slim # python 3.11
+              clang-version: '13'
+            branch-name: master
+            runner: ubuntu-24.04
+          - image:
+              id: debian-12-pdns-base
+              debian-image-name: debian
+              debian-image-tag: bookworm-slim # python 3.11
+              clang-version: '13'
+            branch-name: rel/auth-4.9.x
+            runner: ubuntu-24.04
+          - image:
+              id: debian-13-pdns-base
+              debian-image-name: python
+              debian-image-tag: 3.11-slim-trixie
+              clang-version: '19'
+            branch-name: master
+            runner: ubuntu-24.04
+          - image:
+              id: debian-13-pdns-base
+              debian-image-name: python
+              debian-image-tag: 3.11-slim-trixie
+              clang-version: '19'
+            branch-name: master
+            runner: ubuntu-24.04-arm
+          - image:
+              id: debian-13-pdns-base-py13
+              debian-image-name: debian
+              debian-image-tag: trixie-slim # python 3.13
+              clang-version: '19'
+            branch-name: master
+            runner: ubuntu-24.04
+          - image:
+              id: debian-13-pdns-base-py13
+              debian-image-name: debian
+              debian-image-tag: trixie-slim # python 3.13
+              clang-version: '19'
+            branch-name: master
             runner: ubuntu-24.04-arm
       fail-fast: false
     runs-on: ${{ matrix.runner }}
@@ -95,18 +119,17 @@ jobs:
     name: Generate and publish tag for multi-platform image
     strategy:
       matrix:
-        branch-name:
-          - master
-          - rel/auth-4.9.x
-        image-id:
-          - debian-11-pdns-base
-          - debian-12-pdns-base
-          - debian-13-pdns-base
-        exclude:
-          - branch-name: rel/auth-4.9.x
-            image-id: debian-11-pdns-base
-          - branch-name: rel/auth-4.9.x
-            image-id: debian-13-pdns-base
+        include:
+          - image-id: debian-11-pdns-base
+            branch-name: master
+          - image-id: debian-12-pdns-base
+            branch-name: master
+          - image-id: debian-12-pdns-base
+            branch-name: rel/auth-4.9.x
+          - image-id: debian-13-pdns-base
+            branch-name: master
+          - image-id: debian-13-pdns-base-py13
+            branch-name: master
       fail-fast: false
     runs-on: ubuntu-24.04
     if: ${{ github.event_name != 'pull_request' }}
@@ -158,6 +181,7 @@ jobs:
         - debian-11-pdns-base
         - debian-12-pdns-base
         - debian-13-pdns-base
+        - debian-13-pdns-base-py13
       fail-fast: false
     steps:
       - name: Get repository name
@@ -165,8 +189,7 @@ jobs:
           echo "${{ github.repository }}" | awk -F'/' '{print "repo-name="$2}' >> "$GITHUB_ENV"
 
       - name: Purge old images keeping the 5 more recent ones
-        # FIXME: move to tag v5 when available.
-        uses: actions/delete-package-versions@v5.0.0
+        uses: actions/delete-package-versions@v5
         with:
           package-name: ${{ env.repo-name }}/${{ matrix.image-id }}
           package-type: container
